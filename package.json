@@ -1,0 +1,7 @@
+{
+  "name": "excel-ai",
+  "version": "1.0.0",
+  "dependencies": {
+    "openai": "^5.0.0"
+  }
+}
