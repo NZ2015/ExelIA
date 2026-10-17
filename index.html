@@ -14,6 +14,41 @@
 
     <div class="grid">
         <div class="panel">
+            <!-- Theme controls: allow user to toggle light/dark and pick colors -->
+            <div class="theme-controls" id="themeControls">
+              <div class="theme-row theme-toggle">
+                <label>Thème</label>
+                <div id="themeToggle" class="toggle-switch" title="Basculer clair/sombre">
+                  <div class="toggle-knob"></div>
+                </div>
+                <small class="helper" style="margin-left:8px;">Clair / Sombre</small>
+              </div>
+
+              <div class="theme-row">
+                <label for="colorAccentBlue">Accent bleu</label>
+                <input id="colorAccentBlue" type="color" value="#0ea5e9">
+              </div>
+
+              <div class="theme-row">
+                <label for="colorAccentGreen">Accent vert</label>
+                <input id="colorAccentGreen" type="color" value="#10b981">
+              </div>
+
+              <div class="theme-row">
+                <label for="colorBg">Couleur fond</label>
+                <input id="colorBg" type="color" value="#071023">
+              </div>
+
+              <div class="theme-row">
+                <label for="colorText">Couleur texte</label>
+                <input id="colorText" type="color" value="#e6eef6">
+              </div>
+
+              <div class="theme-row">
+                <button id="resetThemeBtn" class="btn secondary" style="margin-top:6px;">Réinitialiser thème</button>
+              </div>
+            </div>
+
             <div class="file-drop">
                 <label for="excelFile" style="cursor:pointer; display:block; font-weight:bold;">Choisir un fichier Excel</label>
                 <input type="file" id="excelFile" accept=".xlsx,.xls">
