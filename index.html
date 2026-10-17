@@ -4,21 +4,77 @@
     <meta charset="UTF-8">
     <title>Excel AI</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
 <div class="container">
     <h1>Excel AI</h1>
 
-    <input type="file" id="excelFile" accept=".xlsx,.xls">
+    <div class="grid">
+        <div class="panel">
+            <div class="file-drop">
+                <label for="excelFile" style="cursor:pointer; display:block; font-weight:bold;">Choisir un fichier Excel</label>
+                <input type="file" id="excelFile" accept=".xlsx,.xls">
+            </div>
 
-    <button id="analyzeBtn">Analyser</button>
+            <button id="analyzeBtn" class="btn">Analyser</button>
+            <button id="downloadBtn" class="btn secondary">Télécharger</button>
 
-    <pre id="output"></pre>
+            <div class="chat">
+                <h2 style="margin: 16px 0 8px; font-size: 16px;">Question rapide</h2>
+                <div id="chatMessages" class="chat-messages">
+                    <div>Posez une question sur les données.</div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Ex: quelles sont les anomalies ?">
+                    <button id="sendChatBtn" class="btn">Envoyer</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results">
+            <div class="section">
+                <h2>Résumé</h2>
+                <div id="summary" class="summary">Aucun résumé pour l’instant.</div>
+            </div>
+
+            <div class="section">
+                <h2>Tendances</h2>
+                <ul id="trends"></ul>
+            </div>
+
+            <div class="section">
+                <h2>Anomalies</h2>
+                <table class="table" id="anomaliesTable">
+                    <thead>
+                        <tr>
+                            <th>Colonne</th>
+                            <th>Ligne</th>
+                            <th>Valeur</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>Graphique</h2>
+                <div class="chart-wrap">
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Suggestions</h2>
+                <ul id="suggestions"></ul>
+            </div>
+        </div>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="script.js"></script>
-
 </body>
 </html>
