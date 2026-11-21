@@ -51,9 +51,16 @@
             </div>
 
             <div class="file-drop">
-                <label for="excelFile" style="cursor:pointer; display:block; font-weight:bold;">Choisir un fichier Excel</label>
-                <input type="file" id="excelFile" accept=".xlsx,.xls">
-            </div>
+    <label for="excelFile">
+        📁 Choisir un fichier Excel
+    </label>
+
+    <input type="file" id="excelFile" accept=".xlsx,.xls">
+
+    <div id="fileInfo" class="file-info">
+        Aucun fichier sélectionné
+    </div>
+</div>
 
             <button id="analyzeBtn" class="btn">Analyser</button>
             <button id="downloadBtn" class="btn secondary">Télécharger</button>
