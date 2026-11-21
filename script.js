@@ -140,27 +140,89 @@ function initApp() {
   const downloadBtn = safeGet('downloadBtn');
   const sendChatBtn = safeGet('sendChatBtn');
 
-  if (excelFileInput) {
+ if (excelFileInput) {
     excelFileInput.addEventListener('change', (e) => {
-      try {
         const file = e.target.files[0];
+        const fileInfo = document.getElementById('fileInfo');
+
         if (!file) return;
+
+        excelData = [];
+
+        if (!/\.(xlsx|xls)$/i.test(file.name)) {
+            alert("Veuillez choisir un fichier Excel valide.");
+            excelFileInput.value = "";
+            if (fileInfo) fileInfo.textContent = "Aucun fichier sélectionné";
+            return;
+        }
+
+        if (fileInfo) {
+            fileInfo.textContent = "⏳ Chargement de " + file.name + "...";
+        }
+
         const reader = new FileReader();
+
         reader.onload = (event) => {
-          const arrayBuffer = event.target.result;
-          const data = new Uint8Array(arrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          excelData = XLSX.utils.sheet_to_json(sheet);
-          console.log('Données Excel chargées:', excelData);
+            try {
+                const data = new Uint8Array(event.target.result);
+
+                const workbook = XLSX.read(data, {
+                    type: 'array'
+                });
+
+                if (!workbook.SheetNames.length) {
+                    throw new Error("Aucune feuille Excel trouvée.");
+                }
+
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                excelData = XLSX.utils.sheet_to_json(sheet);
+
+                if (!excelData.length) {
+                    throw new Error("Le fichier Excel ne contient aucune donnée.");
+                }
+
+                if (fileInfo) {
+                    fileInfo.innerHTML = "";
+
+                    const name = document.createElement("strong");
+                    name.textContent = "✓ " + file.name;
+
+                    const details = document.createElement("small");
+                    details.textContent =
+                        (file.size / 1024).toFixed(2) + " Ko — " +
+                        excelData.length + " lignes importées";
+
+                    fileInfo.appendChild(name);
+                    fileInfo.appendChild(details);
+                }
+
+                console.log("Fichier importé :", file.name);
+                console.log("Données Excel :", excelData);
+
+            } catch (err) {
+                excelData = [];
+                console.error("Erreur lecture Excel :", err);
+
+                if (fileInfo) {
+                    fileInfo.textContent = "❌ Impossible de lire ce fichier.";
+                }
+
+                alert(err.message);
+            }
         };
+
+        reader.onerror = () => {
+            excelData = [];
+            if (fileInfo) {
+                fileInfo.textContent = "❌ Erreur de lecture du fichier.";
+            }
+            alert("Impossible de lire le fichier.");
+        };
+
         reader.readAsArrayBuffer(file);
-      } catch (err) {
-        console.error('Erreur lecture fichier:', err);
-        alert('Erreur lors de la lecture du fichier. Voir la console.');
-      }
     });
-  }
+}
 
   if (analyzeBtn) {
     analyzeBtn.addEventListener('click', async () => {
