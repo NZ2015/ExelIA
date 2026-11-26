@@ -1,5 +1,5 @@
 
-import { handleUpload } from "@vercel/blob/client";
+import {handleUploadPresigned() } from "@vercel/blob/client";
 import { createClient } from "@supabase/supabase-js";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
