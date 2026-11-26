@@ -1,123 +1,362 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Excel AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#071023">
+
+    <title>IA Exel — Analyse intelligente</title>
+
     <link rel="stylesheet" href="style.css">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <script src="script.js" defer></script>
 </head>
+
 <body>
 
 <div class="container">
-    <h1>Excel AI</h1>
 
-    <div class="grid">
-        <div class="panel">
-            <!-- Theme controls: allow user to toggle light/dark and pick colors -->
-            <div class="theme-controls" id="themeControls">
-              <div class="theme-row theme-toggle">
-                <label>Thème</label>
-                <div id="themeToggle" class="toggle-switch" title="Basculer clair/sombre" role="button" aria-pressed="false">
-                  <div class="toggle-knob"></div>
-                </div>
-                <small class="helper" style="margin-left:8px;">Clair / Sombre</small>
-              </div>
-
-              <div class="theme-row">
-                <label for="colorAccentBlue">Accent bleu</label>
-                <input id="colorAccentBlue" type="color" value="#0ea5e9">
-              </div>
-
-              <div class="theme-row">
-                <label for="colorAccentGreen">Accent vert</label>
-                <input id="colorAccentGreen" type="color" value="#10b981">
-              </div>
-
-              <div class="theme-row">
-                <label for="colorBg">Couleur fond</label>
-                <input id="colorBg" type="color" value="#071023">
-              </div>
-
-              <div class="theme-row">
-                <label for="colorText">Couleur texte</label>
-                <input id="colorText" type="color" value="#e6eef6">
-              </div>
-
-              <div class="theme-row">
-                <button id="applyIaThemeBtn" class="btn secondary" style="margin-top:6px;">Appliquer thème IA Exel</button>
-                <button id="resetThemeBtn" class="btn secondary" style="margin-top:6px; margin-left:8px;">Réinitialiser thème</button>
-              </div>
-            </div>
-
-            <div class="file-drop">
-    <label for="excelFile">
-        📁 Choisir un fichier Excel
-    </label>
-
-    <input type="file" id="excelFile" accept=".xlsx,.xls">
-
-    <div id="fileInfo" class="file-info">
-        Aucun fichier sélectionné
-    </div>
-</div>
-
-            <button id="analyzeBtn" class="btn">Analyser</button>
-            <button id="downloadBtn" class="btn secondary">Télécharger</button>
-
-            <div class="chat">
-                <h2 style="margin: 16px 0 8px; font-size: 16px;">Question rapide</h2>
-                <div id="chatMessages" class="chat-messages">
-                    <div>Posez une question sur les données.</div>
-                </div>
-                <div class="chat-input">
-                    <input type="text" id="chatInput" placeholder="Ex: quelles sont les anomalies ?">
-                    <button id="sendChatBtn" class="btn">Envoyer</button>
-                </div>
-            </div>
+    <header class="app-header">
+        <div>
+            <h1>IA Exel</h1>
+            <p>Votre assistant intelligent pour les fichiers Excel.</p>
         </div>
 
-        <div class="results">
-            <div class="section">
-                <h2>Résumé</h2>
-                <div id="summary" class="summary">Aucun résumé pour l’instant.</div>
-            </div>
-
-            <div class="section">
-                <h2>Tendances</h2>
-                <ul id="trends"></ul>
-            </div>
-
-            <div class="section">
-                <h2>Anomalies</h2>
-                <table class="table" id="anomaliesTable">
-                    <thead>
-                        <tr>
-                            <th>Colonne</th>
-                            <th>Ligne</th>
-                            <th>Valeur</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <div class="section">
-                <h2>Graphique</h2>
-                <div class="chart-wrap">
-                    <canvas id="chart"></canvas>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2>Suggestions</h2>
-                <ul id="suggestions"></ul>
-            </div>
+        <div id="accountArea" class="account-area" hidden>
+            <span id="userEmail"></span>
+            <button id="logoutBtn" class="btn secondary" type="button">
+                Déconnexion
+            </button>
         </div>
-    </div>
+    </header>
+
+    <!-- AUTHENTIFICATION -->
+
+    <section id="authSection" class="panel auth-section">
+
+        <div class="auth-heading">
+            <h2 id="authTitle">Connexion</h2>
+            <p id="authDescription">
+                Connectez-vous pour accéder à votre espace IA Exel.
+            </p>
+        </div>
+
+        <div id="authMessage" class="auth-message"
+             role="status" aria-live="polite"></div>
+
+        <!-- CONNEXION -->
+
+        <form id="loginForm">
+
+            <div class="form-group">
+                <label for="loginEmail">Adresse e-mail</label>
+                <input
+                    type="email"
+                    id="loginEmail"
+                    name="email"
+                    placeholder="exemple@email.com"
+                    autocomplete="email"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="loginPassword">Mot de passe</label>
+                <input
+                    type="password"
+                    id="loginPassword"
+                    name="password"
+                    placeholder="Votre mot de passe"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn auth-submit">
+                Se connecter
+            </button>
+
+        </form>
+
+        <!-- INSCRIPTION -->
+
+        <form id="registerForm" hidden>
+
+            <div class="form-group">
+                <label for="registerUsername">Nom d'utilisateur</label>
+                <input
+                    type="text"
+                    id="registerUsername"
+                    name="username"
+                    placeholder="Votre nom"
+                    minlength="3"
+                    maxlength="30"
+                    autocomplete="username"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="registerEmail">Adresse e-mail</label>
+                <input
+                    type="email"
+                    id="registerEmail"
+                    name="email"
+                    placeholder="exemple@email.com"
+                    autocomplete="email"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="registerPassword">Mot de passe</label>
+                <input
+                    type="password"
+                    id="registerPassword"
+                    name="password"
+                    placeholder="12 caractères minimum"
+                    minlength="12"
+                    autocomplete="new-password"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn auth-submit">
+                Créer mon compte
+            </button>
+
+        </form>
+
+        <div class="auth-switch">
+            <span id="authSwitchText">Vous n'avez pas encore de compte ?</span>
+
+            <button
+                type="button"
+                id="authSwitchBtn"
+                class="auth-switch-btn"
+            >
+                S'inscrire
+            </button>
+        </div>
+
+    </section>
+
+    <!-- APPLICATION EXCEL -->
+
+    <main id="appContent" hidden>
+
+        <div class="grid">
+
+            <!-- PANNEAU PRINCIPAL -->
+
+            <div class="panel">
+
+                <!-- PERSONNALISATION DU THÈME -->
+
+                <div class="theme-controls" id="themeControls">
+
+                    <div class="theme-row theme-toggle">
+                        <label>Thème</label>
+
+                        <div
+                            id="themeToggle"
+                            class="toggle-switch"
+                            title="Basculer clair/sombre"
+                            role="button"
+                            aria-pressed="false"
+                            tabindex="0"
+                        >
+                            <div class="toggle-knob"></div>
+                        </div>
+
+                        <small class="helper" style="margin-left:8px;">
+                            Clair / Sombre
+                        </small>
+                    </div>
+
+                    <div class="theme-row">
+                        <label for="colorAccentBlue">Accent bleu</label>
+                        <input
+                            id="colorAccentBlue"
+                            type="color"
+                            value="#0ea5e9"
+                        >
+                    </div>
+
+                    <div class="theme-row">
+                        <label for="colorAccentGreen">Accent vert</label>
+                        <input
+                            id="colorAccentGreen"
+                            type="color"
+                            value="#10b981"
+                        >
+                    </div>
+
+                    <div class="theme-row">
+                        <label for="colorBg">Couleur fond</label>
+                        <input
+                            id="colorBg"
+                            type="color"
+                            value="#071023"
+                        >
+                    </div>
+
+                    <div class="theme-row">
+                        <label for="colorText">Couleur texte</label>
+                        <input
+                            id="colorText"
+                            type="color"
+                            value="#e6eef6"
+                        >
+                    </div>
+
+                    <div class="theme-row">
+                        <button
+                            id="applyIaThemeBtn"
+                            class="btn secondary"
+                            type="button"
+                            style="margin-top:6px;"
+                        >
+                            Appliquer thème IA Exel
+                        </button>
+
+                        <button
+                            id="resetThemeBtn"
+                            class="btn secondary"
+                            type="button"
+                            style="margin-top:6px; margin-left:8px;"
+                        >
+                            Réinitialiser thème
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- IMPORTATION EXCEL -->
+
+                <div class="file-drop">
+
+                    <label for="excelFile">
+                        📁 Choisir un fichier Excel
+                    </label>
+
+                    <input
+                        type="file"
+                        id="excelFile"
+                        accept=".xlsx,.xls"
+                    >
+
+                    <div id="fileInfo" class="file-info">
+                        Aucun fichier sélectionné
+                    </div>
+
+                </div>
+
+                <button id="analyzeBtn" class="btn" type="button">
+                    Analyser
+                </button>
+
+                <button id="downloadBtn" class="btn secondary" type="button">
+                    Télécharger
+                </button>
+
+                <!-- ASSISTANT IA -->
+
+                <div class="chat">
+
+                    <h2 style="margin:16px 0 8px;font-size:16px;">
+                        Question rapide
+                    </h2>
+
+                    <div id="chatMessages" class="chat-messages">
+                        <div>Posez une question sur les données.</div>
+                    </div>
+
+                    <div class="chat-input">
+
+                        <input
+                            type="text"
+                            id="chatInput"
+                            placeholder="Ex : quelles sont les anomalies ?"
+                        >
+
+                        <button
+                            id="sendChatBtn"
+                            class="btn"
+                            type="button"
+                        >
+                            Envoyer
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- RÉSULTATS -->
+
+            <div class="results">
+
+                <div class="section">
+                    <h2>Résumé</h2>
+                    <div id="summary" class="summary">
+                        Aucun résumé pour l’instant.
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Tendances</h2>
+                    <ul id="trends"></ul>
+                </div>
+
+                <div class="section">
+
+                    <h2>Anomalies</h2>
+
+                    <table class="table" id="anomaliesTable">
+
+                        <thead>
+                            <tr>
+                                <th>Colonne</th>
+                                <th>Ligne</th>
+                                <th>Valeur</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+
+                        <tbody></tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="section">
+
+                    <h2>Graphique</h2>
+
+                    <div class="chart-wrap">
+                        <canvas id="chart"></canvas>
+                    </div>
+
+                </div>
+
+                <div class="section">
+                    <h2>Suggestions</h2>
+                    <ul id="suggestions"></ul>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
 </div>
 
-<script src="script.js"></script>
 </body>
 </html>
