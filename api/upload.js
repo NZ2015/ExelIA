@@ -1,153 +1,191 @@
 
 import { handleUpload } from "@vercel/blob/client";
+import { createClient } from "@supabase/supabase-js";
 
-/*
- * IA Exel — API de dépôt des fichiers Excel
- *
- * IMPORTANT :
- * Remplacer getAuthenticatedUser() par la vérification
- * réelle de la session de connexion d'IA Exel.
- */
-
-// Vérification provisoire : refuse tout utilisateur
-// tant que l'authentification réelle n'est pas intégrée.
-async function getAuthenticatedUser(req) {
-  // À remplacer par ton système de connexion actuel.
-  return null;
-}
-
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 Mo
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 const ALLOWED_TYPES = [
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-excel"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel"
 ];
 
 function jsonResponse(res, status, data) {
-  return res.status(status).json(data);
+    return res.status(status).json(data);
+}
+
+// Vérification réelle de l'utilisateur avec Supabase.
+async function getAuthenticatedUser(req) {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error("Configuration Supabase manquante.");
+    }
+
+    const authHeader = req.headers.authorization || "";
+
+    if (!authHeader.startsWith("Bearer ")) {
+        return null;
+    }
+
+    const accessToken = authHeader.slice(7);
+
+    const supabase = createClient(
+        supabaseUrl,
+        supabaseKey,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+                detectSessionInUrl: false
+            }
+        }
+    );
+
+    const { data, error } =
+        await supabase.auth.getUser(accessToken);
+
+    if (error || !data.user) {
+        return null;
+    }
+
+    return data.user;
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return jsonResponse(res, 405, {
-      success: false,
-      message: "Méthode non autorisée."
-    });
-  }
-
-  try {
-    const body = req.body;
-
-    if (!body || typeof body !== "object") {
-      return jsonResponse(res, 400, {
-        success: false,
-        message: "Requête invalide."
-      });
+    if (req.method !== "POST") {
+        return jsonResponse(res, 405, {
+            success: false,
+            message: "Méthode non autorisée."
+        });
     }
 
-    // Reconstituer une Request Web pour le SDK Vercel Blob.
-    const protocol = req.headers["x-forwarded-proto"] || "https";
-    const host = req.headers.host;
-
-    const headers = new Headers();
-
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (Array.isArray(value)) {
-        headers.set(key, value.join(", "));
-      } else if (value !== undefined) {
-        headers.set(key, String(value));
-      }
-    }
-
-    const request = new Request(
-      `${protocol}://${host}${req.url}`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body)
-      }
-    );
-
-    const result = await handleUpload({
-      request,
-      body,
-
-      // Cette fonction est exécutée avant la création
-      // du jeton d'upload.
-      onBeforeGenerateToken: async (pathname) => {
+    try {
         const user = await getAuthenticatedUser(req);
 
-        if (!user || !user.id) {
-          throw new Error("Utilisateur non connecté.");
+        if (!user) {
+            return jsonResponse(res, 401, {
+                success: false,
+                message: "Utilisateur non connecté ou session expirée."
+            });
         }
 
-        const userFolder = `users/${encodeURIComponent(user.id)}/`;
+        const body = req.body;
 
-        // Chaque compte possède son propre dossier.
-        if (!pathname.startsWith(userFolder)) {
-          throw new Error("Chemin de dépôt non autorisé.");
+        if (!body || typeof body !== "object") {
+            return jsonResponse(res, 400, {
+                success: false,
+                message: "Requête invalide."
+            });
         }
 
-        const extension = pathname.toLowerCase();
+        const protocol =
+            req.headers["x-forwarded-proto"] || "https";
 
-        if (
-          !extension.endsWith(".xlsx") &&
-          !extension.endsWith(".xls")
-        ) {
-          throw new Error("Seuls les fichiers Excel sont acceptés.");
+        const host = req.headers.host;
+
+        if (!host) {
+            return jsonResponse(res, 400, {
+                success: false,
+                message: "Hôte de requête introuvable."
+            });
         }
 
-        return {
-          allowedContentTypes: ALLOWED_TYPES,
-          maximumSizeInBytes: MAX_FILE_SIZE,
-          addRandomSuffix: true,
-          allowOverwrite: false,
+        const headers = new Headers();
 
-          // Identité conservée pour le traitement du callback.
-          tokenPayload: JSON.stringify({
-            userId: user.id
-          })
-        };
-      },
-
-      // Appelé après le dépôt réussi dans Vercel Blob.
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        const metadata = JSON.parse(tokenPayload || "{}");
-
-        if (!metadata.userId) {
-          throw new Error("Propriétaire du fichier introuvable.");
+        for (const [key, value] of Object.entries(req.headers)) {
+            if (Array.isArray(value)) {
+                headers.set(key, value.join(", "));
+            } else if (value !== undefined) {
+                headers.set(key, String(value));
+            }
         }
 
-        // À cette étape, nous pourrons enregistrer dans
-        // la base de données le propriétaire, le nom,
-        // le chemin Blob et la date du dépôt.
-        console.log("Fichier Excel déposé :", {
-          ownerId: metadata.userId,
-          pathname: blob.pathname
+        const request = new Request(
+            `${protocol}://${host}${req.url}`,
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify(body)
+            }
+        );
+
+        const result = await handleUpload({
+            request,
+            body,
+
+            onBeforeGenerateToken: async (pathname) => {
+                const userFolder =
+                    `users/${encodeURIComponent(user.id)}/`;
+
+                if (
+                    typeof pathname !== "string" ||
+                    !pathname.startsWith(userFolder)
+                ) {
+                    throw new Error(
+                        "Chemin de dépôt non autorisé."
+                    );
+                }
+
+                const extension = pathname.toLowerCase();
+
+                if (
+                    !extension.endsWith(".xlsx") &&
+                    !extension.endsWith(".xls")
+                ) {
+                    throw new Error(
+                        "Seuls les fichiers Excel sont acceptés."
+                    );
+                }
+
+                return {
+                    allowedContentTypes: ALLOWED_TYPES,
+                    maximumSizeInBytes: MAX_FILE_SIZE,
+                    addRandomSuffix: true,
+                    allowOverwrite: false,
+
+                    tokenPayload: JSON.stringify({
+                        userId: user.id
+                    })
+                };
+            },
+
+            onUploadCompleted: async ({
+                blob,
+                tokenPayload
+            }) => {
+                const metadata = JSON.parse(
+                    tokenPayload || "{}"
+                );
+
+                if (!metadata.userId) {
+                    throw new Error(
+                        "Propriétaire du fichier introuvable."
+                    );
+                }
+
+                console.log("Fichier Excel déposé :", {
+                    ownerId: metadata.userId,
+                    pathname: blob.pathname
+                });
+            }
         });
-      }
-    });
 
-    return jsonResponse(res, 200, {
-      success: true,
-      ...result
-    });
+        return jsonResponse(res, 200, {
+            success: true,
+            ...result
+        });
 
-  } catch (error) {
-    console.error("Erreur API upload :", error.message);
+    } catch (error) {
+        console.error(
+            "Erreur API upload :",
+            error.message
+        );
 
-    const message = error.message || "Échec du dépôt.";
-
-    if (message.includes("connecté")) {
-      return jsonResponse(res, 401, {
-        success: false,
-        message
-      });
+        return jsonResponse(res, 400, {
+            success: false,
+            message: "Échec du dépôt du fichier Excel."
+        });
     }
-
-    return jsonResponse(res, 400, {
-      success: false,
-      message
-    });
-  }
 }
+
