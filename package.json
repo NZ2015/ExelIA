@@ -1,8 +1,12 @@
 {
-  "name": "excel-ai",
+  "name": "ia-exel",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "vercel dev"
+  },
   "dependencies": {
-    "openai": "^5.0.0"
+    "@supabase/supabase-js": "^2.0.0"
   }
 }
