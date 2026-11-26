@@ -1,66 +1,84 @@
+
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+function jsonResponse(res, status, data) {
+    return res.status(status).json(data);
+}
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      message: "Méthode non autorisée."
-    });
-  }
-
-  try {
-    const authorization = req.headers.authorization || "";
-
-    if (!authorization.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentification requise."
-      });
+    if (req.method !== "POST") {
+        return jsonResponse(res, 405, {
+            success: false,
+            message: "Méthode non autorisée."
+        });
     }
 
-    const token = authorization.slice(7);
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-    const { data: userData, error: userError } =
-      await supabaseAdmin.auth.getUser(token);
-
-    if (userError || !userData.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Session invalide."
-      });
+    if (!supabaseUrl || !secretKey) {
+        return jsonResponse(res, 500, {
+            success: false,
+            message: "Configuration Supabase manquante."
+        });
     }
 
-    const { error } = await supabaseAdmin.auth.admin.signOut(
-      token,
-      "global"
-    );
+    const authHeader = req.headers.authorization || "";
+    const accessToken = authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : "";
 
-    if (error) {
-      throw error;
+    if (!accessToken) {
+        return jsonResponse(res, 401, {
+            success: false,
+            message: "Session non trouvée."
+        });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Déconnexion réussie."
-    });
+    try {
+        const supabaseAdmin = createClient(
+            supabaseUrl,
+            secretKey,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false,
+                    detectSessionInUrl: false
+                }
+            }
+        );
 
-  } catch (error) {
-    console.error("Erreur déconnexion :", error);
+        const { data, error: userError } =
+            await supabaseAdmin.auth.getUser(accessToken);
 
-    return res.status(500).json({
-      success: false,
-      message: "Impossible de fermer la session."
-    });
-  }
+        if (userError || !data.user) {
+            return jsonResponse(res, 401, {
+                success: false,
+                message: "Session invalide ou expirée."
+            });
+        }
+
+        const { error } =
+            await supabaseAdmin.auth.admin.signOut(
+                accessToken,
+                "global"
+            );
+
+        if (error) {
+            throw error;
+        }
+
+        return jsonResponse(res, 200, {
+            success: true,
+            message: "Déconnexion réussie."
+        });
+
+    } catch (error) {
+        console.error("Erreur déconnexion :", error.message);
+
+        return jsonResponse(res, 500, {
+            success: false,
+            message: "Impossible de terminer la déconnexion."
+        });
+    }
 }
