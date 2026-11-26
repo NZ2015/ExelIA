@@ -1,12 +1,18 @@
+
 {
-  "name": "ia-exel",
+  "name": "exelia",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "build": "echo \"Build completed\""
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.0"
+    "@supabase/supabase-js": "^2.119.2",
+    "@vercel/blob": "^2.9.0"
+  },
+  "devDependencies": {
+    "vercel": "^48.0.0"
   }
 }
