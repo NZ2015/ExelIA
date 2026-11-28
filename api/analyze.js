@@ -144,7 +144,7 @@ Consignes :
 - conclusions : 1-3 conclusions actionnables.
 - suggestions : actions concrètes (ex: nettoyer colonnes X, vérifier valeurs y, créer pivot, exporter).
 `;
-
+    const client = getOpenAIClient();
     const completion = await client.responses.create({
       model: "gpt-5",
       input: prompt
