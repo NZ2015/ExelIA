@@ -1,9 +1,14 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
 
+  if (!apiKey) {
+    throw new Error("La variable OPENAI_API_KEY est absente.");
+  }
+
+  return new OpenAI({ apiKey });
+}
 // Helpers: cleaning, type inference, simple anomaly detection (z-score)
 function inferColumnTypes(data) {
   const types = {};
